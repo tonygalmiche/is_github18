@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- is.github.repository - Vue formulaire -->
+    <record id="is_github_repository_form" model="ir.ui.view">
+        <field name="name">is.github.repository.form</field>
+        <field name="model">is.github.repository</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_actualiser" string="Actualiser" type="object" class="oe_highlight"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" type="object" name="action_view_contributors" icon="fa-users">
+                            <field name="contributor_count" widget="statinfo" string="Contributeurs"/>
+                        </button>
+                        <button class="oe_stat_button" type="object" name="action_view_modules" icon="fa-puzzle-piece">
+                            <field name="module_count" widget="statinfo" string="Modules"/>
+                        </button>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="compte_id"/>
+                            <field name="url" widget="url"/>
+                        </group>
+                        <group>
+                            <field name="nb_contributors"/>
+                            <field name="nb_commits"/>
+                            <field name="last_commit_date"/>
+                        </group>
+                    </group>
+                    <group string="Branches">
+                        <field name="branch_ids" widget="many2many_tags" options="{'color_field': 'color'}" nolabel="1"/>
+                    </group>
+                    <notebook>
+                        <page string="Commentaire" name="commentaire">
+                            <field name="commentaire" nolabel="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- is.github.repository - Vue liste -->
+    <record id="is_github_repository_list" model="ir.ui.view">
+        <field name="name">is.github.repository.list</field>
+        <field name="model">is.github.repository</field>
+        <field name="arch" type="xml">
+            <list default_order="nb_contributors desc">
+                <header>
+                    <button name="action_actualiser_selection" string="Actualiser" type="object" class="oe_highlight" icon="fa-refresh"/>
+                </header>
+                <field name="name"             optional="show"/>
+                <field name="compte_id"        optional="show"/>
+                <field name="url"              optional="show" widget="url"/>
+                <field name="nb_contributors"  optional="show"/>
+                <field name="nb_commits"       optional="show"/>
+                <field name="module_count"     optional="show"/>
+                <field name="last_commit_date" optional="show"/>
+                <field name="branch_ids"       optional="hide" widget="many2many_tags"/>
+                <field name="commentaire"      optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- is.github.repository - Vue recherche -->
+    <record id="is_github_repository_search" model="ir.ui.view">
+        <field name="name">is.github.repository.search</field>
+        <field name="model">is.github.repository</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="compte_id"/>
+                <field name="branch_ids"/>
+                <field name="commentaire"/>
+                <filter name="with_contributors" string="Avec contributeurs"
+                        domain="[('nb_contributors', '&gt;', 0)]"/>
+                <group expand="0" string="Regrouper par...">
+                    <filter name="group_by_compte_id" string="Compte" context="{'group_by': 'compte_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- is.github.repository - Vue graph -->
+    <record id="is_github_repository_graph" model="ir.ui.view">
+        <field name="name">is.github.repository.graph</field>
+        <field name="model">is.github.repository</field>
+        <field name="arch" type="xml">
+            <graph string="Dépôts Github" type="bar">
+                <field name="compte_id" type="row"/>
+                <field name="nb_contributors" type="measure"/>
+                <field name="nb_commits" type="measure"/>
+                <field name="module_count" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- is.github.repository - Vue pivot -->
+    <record id="is_github_repository_pivot" model="ir.ui.view">
+        <field name="name">is.github.repository.pivot</field>
+        <field name="model">is.github.repository</field>
+        <field name="arch" type="xml">
+            <pivot string="Dépôts Github">
+                <field name="compte_id" type="row"/>
+                <field name="nb_contributors" type="measure"/>
+                <field name="nb_commits" type="measure"/>
+                <field name="module_count" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Action dépôts -->
+    <record id="is_github_repository_action" model="ir.actions.act_window">
+        <field name="name">Dépôts Github</field>
+        <field name="res_model">is.github.repository</field>
+        <field name="view_mode">list,form,graph,pivot</field>
+        <field name="context">{'search_default_with_contributors': 1, 'order': 'nb_contributors desc'}</field>
+    </record>
+
+    <!-- Action serveur : actualiser en masse -->
+    <record id="is_github_repository_action_actualiser" model="ir.actions.server">
+        <field name="name">Actualiser</field>
+        <field name="model_id" ref="model_is_github_repository"/>
+        <field name="binding_model_id" ref="model_is_github_repository"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">records.action_actualiser_selection()</field>
+    </record>
+
+    <!-- is.github.branch - Vue liste -->
+    <record id="is_github_branch_list" model="ir.ui.view">
+        <field name="name">is.github.branch.list</field>
+        <field name="model">is.github.branch</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="color"      widget="color_picker" optional="show"/>
+                <field name="name"       optional="show"/>
+                <field name="is_version" optional="show"/>
+                <field name="module_count" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- is.github.branch - Vue formulaire -->
+    <record id="is_github_branch_form" model="ir.ui.view">
+        <field name="name">is.github.branch.form</field>
+        <field name="model">is.github.branch</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_compute_color" string="Recalculer la couleur" type="object"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" type="object" name="action_view_modules" icon="fa-puzzle-piece">
+                            <field name="module_count" widget="statinfo" string="Modules"/>
+                        </button>
+                    </div>
+                    <group>
+                        <field name="name"/>
+                        <field name="color" widget="color_picker"/>
+                        <field name="is_version"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action serveur : recalculer les couleurs (sélection multiple) -->
+    <record id="is_github_branch_action_compute_color" model="ir.actions.server">
+        <field name="name">Recalculer les couleurs</field>
+        <field name="model_id" ref="model_is_github_branch"/>
+        <field name="binding_model_id" ref="model_is_github_branch"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">records.action_compute_color()</field>
+    </record>
+
+    <!-- Action branches -->
+    <record id="is_github_branch_action" model="ir.actions.act_window">
+        <field name="name">Branches Github</field>
+        <field name="res_model">is.github.branch</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- is.github.contributor - Vue liste -->
+    <record id="is_github_contributor_list" model="ir.ui.view">
+        <field name="name">is.github.contributor.list</field>
+        <field name="model">is.github.contributor</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"             optional="show"/>
+                <field name="url"              optional="show" widget="url"/>
+                <field name="repository_count" optional="show"/>
+                <field name="repository_ids"   optional="hide" widget="many2many_tags"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- is.github.contributor - Vue formulaire -->
+    <record id="is_github_contributor_form" model="ir.ui.view">
+        <field name="name">is.github.contributor.form</field>
+        <field name="model">is.github.contributor</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" type="object" name="action_view_repositories" icon="fa-code-fork">
+                            <field name="repository_count" widget="statinfo" string="Dépôts"/>
+                        </button>
+                    </div>
+                    <group>
+                        <field name="name"/>
+                        <field name="url" widget="url"/>
+                    </group>
+                    <group string="Dépôts">
+                        <field name="repository_ids" widget="many2many_tags" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- is.github.contributor - Vue recherche -->
+    <record id="is_github_contributor_search" model="ir.ui.view">
+        <field name="name">is.github.contributor.search</field>
+        <field name="model">is.github.contributor</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="repository_ids"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action contributeurs -->
+    <record id="is_github_contributor_action" model="ir.actions.act_window">
+        <field name="name">Contributeurs Github</field>
+        <field name="res_model">is.github.contributor</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- is.github.module - Vue liste -->
+    <record id="is_github_module_list" model="ir.ui.view">
+        <field name="name">is.github.module.list</field>
+        <field name="model">is.github.module</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"         optional="show"/>
+                <field name="repository_id" optional="show"/>
+                <field name="branch_ids"   optional="show" widget="many2many_tags" options="{'color_field': 'color'}"/>
+                <field name="commentaire"  optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- is.github.module - Vue formulaire -->
+    <record id="is_github_module_form" model="ir.ui.view">
+        <field name="name">is.github.module.form</field>
+        <field name="model">is.github.module</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" type="object" name="action_view_branches" icon="fa-code-fork">
+                            <field name="branch_count" widget="statinfo" string="Branches"/>
+                        </button>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="repository_id"/>
+                        </group>
+                        <group>
+                            <field name="branch_ids" widget="many2many_tags" options="{'color_field': 'color'}"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Commentaire" name="commentaire">
+                            <field name="commentaire" nolabel="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- is.github.module - Vue recherche -->
+    <record id="is_github_module_search" model="ir.ui.view">
+        <field name="name">is.github.module.search</field>
+        <field name="model">is.github.module</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="repository_id"/>
+                <field name="branch_ids"/>
+                <group expand="0" string="Regrouper par...">
+                    <filter name="group_by_repository_id" string="Dépôt" context="{'group_by': 'repository_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- is.github.module - Vue graph -->
+    <record id="is_github_module_graph" model="ir.ui.view">
+        <field name="name">is.github.module.graph</field>
+        <field name="model">is.github.module</field>
+        <field name="arch" type="xml">
+            <graph string="Modules Github" type="bar">
+                <field name="repository_id" type="row"/>
+                <field name="branch_count" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- is.github.module - Vue pivot -->
+    <record id="is_github_module_pivot" model="ir.ui.view">
+        <field name="name">is.github.module.pivot</field>
+        <field name="model">is.github.module</field>
+        <field name="arch" type="xml">
+            <pivot string="Modules Github">
+                <field name="repository_id" type="row"/>
+                <field name="branch_count" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Action modules -->
+    <record id="is_github_module_action" model="ir.actions.act_window">
+        <field name="name">Modules Github</field>
+        <field name="res_model">is.github.module</field>
+        <field name="view_mode">list,form,graph,pivot</field>
+    </record>
+
+    <!-- is.github.module.stat - Vue pivot -->
+    <record id="is_github_module_stat_pivot" model="ir.ui.view">
+        <field name="name">is.github.module.stat.pivot</field>
+        <field name="model">is.github.module.stat</field>
+        <field name="arch" type="xml">
+            <pivot string="Modules par branche et dépôt">
+                <field name="branch_id"    type="col"/>
+                <field name="repository_id" type="row"/>
+                <field name="module_count" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- is.github.module.stat - Vue graph -->
+    <record id="is_github_module_stat_graph" model="ir.ui.view">
+        <field name="name">is.github.module.stat.graph</field>
+        <field name="model">is.github.module.stat</field>
+        <field name="arch" type="xml">
+            <graph string="Modules par dépôt et branche" type="bar" stacked="1" order="desc">
+                <field name="repository_id" type="row"/>
+                <field name="branch_id"     type="col"/>
+                <field name="module_count"  type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- is.github.module.stat - Vue recherche -->
+    <record id="is_github_module_stat_search" model="ir.ui.view">
+        <field name="name">is.github.module.stat.search</field>
+        <field name="model">is.github.module.stat</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="repository_id"/>
+                <field name="branch_id"/>
+                <field name="compte_id"/>
+                <filter name="version_branches" string="Branches de version"
+                        domain="[('is_version', '=', True)]"/>
+                <filter name="version_12plus" string="Branches >= 12.0"
+                        domain="[('version_major', '&gt;=', 12)]"/>
+                <group expand="0" string="Regrouper par...">
+                    <filter name="group_by_compte"     string="Compte"  context="{'group_by': 'compte_id'}"/>
+                    <filter name="group_by_repository" string="Dépôt"   context="{'group_by': 'repository_id'}"/>
+                    <filter name="group_by_branch"     string="Branche" context="{'group_by': 'branch_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action stat modules -->
+    <record id="is_github_module_stat_action" model="ir.actions.act_window">
+        <field name="name">Statistiques modules</field>
+        <field name="res_model">is.github.module.stat</field>
+        <field name="view_mode">pivot,graph</field>
+        <field name="context">{'search_default_version_12plus': 1}</field>
+    </record>
+
+</odoo>

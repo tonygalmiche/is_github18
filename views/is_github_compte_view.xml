@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- is.github.compte - Vue formulaire -->
+    <record id="is_github_compte_form" model="ir.ui.view">
+        <field name="name">is.github.compte.form</field>
+        <field name="model">is.github.compte</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_actualiser"         string="Actualiser"           type="object" class="oe_highlight"/>
+                    <button name="action_fetch_repositories" string="Récupérer les dépôts" type="object"/>
+                    <button name="action_view_repositories"  string="Voir les dépôts"      type="object"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" type="object" name="action_view_repositories" icon="fa-code-fork">
+                            <field name="repository_count" widget="statinfo" string="Dépôts"/>
+                        </button>
+                    </div>
+                    <group>
+                        <field name="name"/>
+                        <field name="url" widget="url"/>
+                        <field name="nb_repos"/>
+                        <field name="nb_contributors"/>
+                    </group>
+                    <group string="Commentaire">
+                        <field name="commentaire" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- is.github.compte - Vue liste -->
+    <record id="is_github_compte_list" model="ir.ui.view">
+        <field name="name">is.github.compte.list</field>
+        <field name="model">is.github.compte</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"             optional="show"/>
+                <field name="url"              optional="show" widget="url"/>
+                <field name="nb_repos"         optional="show"/>
+                <field name="nb_contributors"  optional="show"/>
+                <field name="repository_count" optional="show"/>
+                <field name="commentaire"      optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- is.github.compte - Vue recherche -->
+    <record id="is_github_compte_search" model="ir.ui.view">
+        <field name="name">is.github.compte.search</field>
+        <field name="model">is.github.compte</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="commentaire"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="is_github_compte_action" model="ir.actions.act_window">
+        <field name="name">Comptes Github</field>
+        <field name="res_model">is.github.compte</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+</odoo>

@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_is_github_compte_user,is.github.compte user,model_is_github_compte,base.group_user,1,1,1,1
+access_is_github_repository_user,is.github.repository user,model_is_github_repository,base.group_user,1,1,1,1
+access_is_github_branch_user,is.github.branch user,model_is_github_branch,base.group_user,1,1,1,1
+access_is_github_contributor_user,is.github.contributor user,model_is_github_contributor,base.group_user,1,1,1,1
+access_is_github_module_user,is.github.module user,model_is_github_module,base.group_user,1,1,1,1
+access_is_github_module_stat_user,is.github.module.stat user,model_is_github_module_stat,base.group_user,1,0,0,0

@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <menuitem id="is_github_menu_root"
+              name="Github"
+              sequence="100"/>
+
+    <menuitem id="is_github_menu_comptes"
+              name="Comptes Github"
+              parent="is_github_menu_root"
+              action="is_github_compte_action"
+              sequence="10"/>
+
+    <menuitem id="is_github_menu_repositories"
+              name="Dépôts Github"
+              parent="is_github_menu_root"
+              action="is_github_repository_action"
+              sequence="20"/>
+
+    <menuitem id="is_github_menu_branches"
+              name="Branches"
+              parent="is_github_menu_root"
+              action="is_github_branch_action"
+              sequence="30"/>
+
+    <menuitem id="is_github_menu_contributors"
+              name="Contributeurs"
+              parent="is_github_menu_root"
+              action="is_github_contributor_action"
+              sequence="40"/>
+
+    <menuitem id="is_github_menu_modules"
+              name="Modules"
+              parent="is_github_menu_root"
+              action="is_github_module_action"
+              sequence="50"/>
+
+    <menuitem id="is_github_menu_module_stat"
+              name="Stat. modules"
+              parent="is_github_menu_root"
+              action="is_github_module_stat_action"
+              sequence="60"/>
+
+</odoo>
