@@ -18,6 +18,7 @@ Module InfoSaône Github pour Odoo 18
         'views/res_company_view.xml',
         'views/is_github_repository_view.xml',
         'views/is_github_compte_view.xml',
+        'views/is_github_pr_view.xml',
         'views/menu.xml',
     ],
     "assets": {

@@ -57,17 +57,18 @@ class IsGithubCompte(models.Model):
     nb_repos         = fields.Integer("Nombre de dépôts"        , readonly=True)
     nb_contributors  = fields.Integer("Nombre de contributeurs" , readonly=True)
     repository_ids   = fields.One2many('is.github.repository'   , 'compte_id', string="Liste des dépôts")
-    repository_count = fields.Integer("Dépôts"                  , compute='_compute_repository_count')
+    pr_ids           = fields.One2many('is.github.pr'            , 'compte_id', string="Liste des Pull Requests")
+    pr_count         = fields.Integer("Pull Requests"           , compute='_compute_pr_count')
+
+    @api.depends('pr_ids')
+    def _compute_pr_count(self):
+        for rec in self:
+            rec.pr_count = len(rec.pr_ids)
 
     @api.depends('name')
     def _compute_url(self):
         for rec in self:
             rec.url = f"https://github.com/{rec.name}" if rec.name else ""
-
-    @api.depends('repository_ids')
-    def _compute_repository_count(self):
-        for rec in self:
-            rec.repository_count = len(rec.repository_ids)
 
     def _fetch_all_pages(self, url, headers, params=None):
         """Récupère tous les éléments paginés d'un endpoint GitHub."""
@@ -89,6 +90,8 @@ class IsGithubCompte(models.Model):
         return items
 
     def action_actualiser(self):
+        """Vérifie l'existence du compte puis enregistre en base le nombre de
+        dépôts et de contributeurs réellement synchronisés localement."""
         self.ensure_one()
         token = self.env.company.is_github_key
         headers = {'Accept': 'application/vnd.github+json'}
@@ -97,26 +100,16 @@ class IsGithubCompte(models.Model):
 
         name = self.name
 
-        # Tentative via l'endpoint organisation
+        # Tentative via l'endpoint organisation, puis utilisateur
         resp = requests.get(f'https://api.github.com/orgs/{name}', headers=headers, timeout=15)
-        if resp.status_code == 200:
-            data            = resp.json()
-            nb_repos        = data.get('public_repos', 0)
-            members         = self._fetch_all_pages(f'https://api.github.com/orgs/{name}/members', headers)
-            nb_contributors = len(members)
-        else:
-            # Tentative via l'endpoint utilisateur
+        if resp.status_code != 200:
             resp = requests.get(f'https://api.github.com/users/{name}', headers=headers, timeout=15)
-            if resp.status_code == 200:
-                data            = resp.json()
-                nb_repos        = data.get('public_repos', 0)
-                nb_contributors = data.get('followers', 0)
-            else:
+            if resp.status_code != 200:
                 raise UserError(f"Impossible de récupérer les données pour le compte « {name} » (code {resp.status_code}).")
 
         self.write({
-            'nb_repos'       : nb_repos,
-            'nb_contributors': nb_contributors,
+            'nb_repos'       : len(self.repository_ids),
+            'nb_contributors': len(self.repository_ids.contributor_ids),
         })
 
     def action_fetch_repositories(self):
@@ -162,6 +155,29 @@ class IsGithubCompte(models.Model):
             'context'  : {'default_compte_id': self.id},
         }
 
+    def action_view_contributors(self):
+        """Ouvre la liste des contributeurs des dépôts de ce compte."""
+        self.ensure_one()
+        return {
+            'type'     : 'ir.actions.act_window',
+            'name'     : f'Contributeurs — {self.name}',
+            'res_model': 'is.github.contributor',
+            'view_mode': 'list,form',
+            'domain'   : [('repository_ids', 'in', self.repository_ids.ids)],
+        }
+
+    def action_view_prs(self):
+        """Ouvre la liste des Pull Requests de ce compte."""
+        self.ensure_one()
+        return {
+            'type'     : 'ir.actions.act_window',
+            'name'     : f'Pull Requests — {self.name}',
+            'res_model': 'is.github.pr',
+            'view_mode': 'list,form',
+            'domain'   : [('compte_id', '=', self.id)],
+            'context'  : {'default_compte_id': self.id},
+        }
+
 
 
 class IsGithubBranch(models.Model):
@@ -179,6 +195,8 @@ class IsGithubBranch(models.Model):
         string="Liste des modules"
     )
     module_count = fields.Integer("Modules", compute='_compute_module_count', store=True)
+    pr_ids       = fields.One2many('is.github.pr', 'branch_id', string="Liste des Pull Requests")
+    pr_count     = fields.Integer("Pull Requests", compute='_compute_pr_count')
 
     @api.depends('name')
     def _compute_is_version(self):
@@ -193,6 +211,11 @@ class IsGithubBranch(models.Model):
         for rec in self:
             rec.module_count = len(rec.module_link_ids)
 
+    @api.depends('pr_ids')
+    def _compute_pr_count(self):
+        for rec in self:
+            rec.pr_count = len(rec.pr_ids)
+
     def action_view_modules(self):
         self.ensure_one()
         return {
@@ -201,6 +224,17 @@ class IsGithubBranch(models.Model):
             'res_model': 'is.github.module',
             'view_mode': 'list,form',
             'domain'   : [('branch_ids', 'in', [self.id])],
+        }
+
+    def action_view_prs(self):
+        self.ensure_one()
+        return {
+            'type'     : 'ir.actions.act_window',
+            'name'     : f'Pull Requests — {self.name}',
+            'res_model': 'is.github.pr',
+            'view_mode': 'list,form',
+            'domain'   : [('branch_id', '=', self.id)],
+            'context'  : {'default_branch_id': self.id},
         }
 
     @api.model_create_multi
@@ -230,11 +264,22 @@ class IsGithubModule(models.Model):
     )
     branch_count  = fields.Integer("Nb branches", compute='_compute_branch_count', store=True)
     commentaire   = fields.Text("Commentaire")
+    pr_ids        = fields.Many2many(
+        'is.github.pr',
+        'is_github_pr_module_rel', 'module_id', 'pr_id',
+        string="Liste des Pull Requests"
+    )
+    pr_count      = fields.Integer("Pull Requests", compute='_compute_pr_count')
 
     @api.depends('branch_ids')
     def _compute_branch_count(self):
         for rec in self:
             rec.branch_count = len(rec.branch_ids)
+
+    @api.depends('pr_ids')
+    def _compute_pr_count(self):
+        for rec in self:
+            rec.pr_count = len(rec.pr_ids)
 
     def action_view_branches(self):
         self.ensure_one()
@@ -244,6 +289,16 @@ class IsGithubModule(models.Model):
             'res_model': 'is.github.branch',
             'view_mode': 'list,form',
             'domain'   : [('id', 'in', self.branch_ids.ids)],
+        }
+
+    def action_view_prs(self):
+        self.ensure_one()
+        return {
+            'type'     : 'ir.actions.act_window',
+            'name'     : f'Pull Requests — {self.name}',
+            'res_model': 'is.github.pr',
+            'view_mode': 'list,form',
+            'domain'   : [('id', 'in', self.pr_ids.ids)],
         }
 
 
@@ -260,11 +315,18 @@ class IsGithubContributor(models.Model):
         string="Liste des dépôts"
     )
     repository_count = fields.Integer("Dépôts", compute='_compute_repository_count', store=True)
+    pr_ids           = fields.One2many('is.github.pr', 'contributor_id', string="Liste des Pull Requests")
+    pr_count         = fields.Integer("Pull Requests", compute='_compute_pr_count')
 
     @api.depends('repository_ids')
     def _compute_repository_count(self):
         for rec in self:
             rec.repository_count = len(rec.repository_ids)
+
+    @api.depends('pr_ids')
+    def _compute_pr_count(self):
+        for rec in self:
+            rec.pr_count = len(rec.pr_ids)
 
     def action_view_repositories(self):
         self.ensure_one()
@@ -274,6 +336,17 @@ class IsGithubContributor(models.Model):
             'res_model': 'is.github.repository',
             'view_mode': 'list,form',
             'domain'   : [('contributor_ids', 'in', [self.id])],
+        }
+
+    def action_view_prs(self):
+        self.ensure_one()
+        return {
+            'type'     : 'ir.actions.act_window',
+            'name'     : f'Pull Requests de {self.name}',
+            'res_model': 'is.github.pr',
+            'view_mode': 'list,form',
+            'domain'   : [('contributor_id', '=', self.id)],
+            'context'  : {'default_contributor_id': self.id},
         }
 
 
@@ -298,6 +371,8 @@ class IsGithubRepository(models.Model):
     module_ids       = fields.One2many('is.github.module', 'repository_id', string="Liste des modules")
     module_count     = fields.Integer("Modules"                 , compute='_compute_module_count', store=True)
     commentaire      = fields.Text("Commentaire")
+    pr_ids           = fields.One2many('is.github.pr', 'repository_id', string="Liste des Pull Requests")
+    pr_count         = fields.Integer("Pull Requests"           , compute='_compute_pr_count')
 
     @api.depends('name', 'compte_id.name')
     def _compute_url(self):
@@ -317,6 +392,11 @@ class IsGithubRepository(models.Model):
         for rec in self:
             rec.module_count = len(rec.module_ids)
 
+    @api.depends('pr_ids')
+    def _compute_pr_count(self):
+        for rec in self:
+            rec.pr_count = len(rec.pr_ids)
+
     def action_view_contributors(self):
         self.ensure_one()
         return {
@@ -333,6 +413,16 @@ class IsGithubRepository(models.Model):
             'type'     : 'ir.actions.act_window',
             'name'     : f'Modules — {self.name}',
             'res_model': 'is.github.module',
+            'view_mode': 'list,form',
+            'domain'   : [('repository_id', '=', self.id)],
+            'context'  : {'default_repository_id': self.id},
+        }
+    def action_view_prs(self):
+        self.ensure_one()
+        return {
+            'type'     : 'ir.actions.act_window',
+            'name'     : f'Pull Requests — {self.name}',
+            'res_model': 'is.github.pr',
             'view_mode': 'list,form',
             'domain'   : [('repository_id', '=', self.id)],
             'context'  : {'default_repository_id': self.id},

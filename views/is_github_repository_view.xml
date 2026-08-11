@@ -18,6 +18,9 @@
                         <button class="oe_stat_button" type="object" name="action_view_modules" icon="fa-puzzle-piece">
                             <field name="module_count" widget="statinfo" string="Modules"/>
                         </button>
+                        <button class="oe_stat_button" type="object" name="action_view_prs" icon="fa-code-fork">
+                            <field name="pr_count" widget="statinfo" string="Pull Requests"/>
+                        </button>
                     </div>
                     <group>
                         <group>
@@ -159,6 +162,9 @@
                         <button class="oe_stat_button" type="object" name="action_view_modules" icon="fa-puzzle-piece">
                             <field name="module_count" widget="statinfo" string="Modules"/>
                         </button>
+                        <button class="oe_stat_button" type="object" name="action_view_prs" icon="fa-code-fork">
+                            <field name="pr_count" widget="statinfo" string="Pull Requests"/>
+                        </button>
                     </div>
                     <group>
                         <field name="name"/>
@@ -211,6 +217,9 @@
                     <div class="oe_button_box" name="button_box">
                         <button class="oe_stat_button" type="object" name="action_view_repositories" icon="fa-code-fork">
                             <field name="repository_count" widget="statinfo" string="Dépôts"/>
+                        </button>
+                        <button class="oe_stat_button" type="object" name="action_view_prs" icon="fa-code-fork">
+                            <field name="pr_count" widget="statinfo" string="Pull Requests"/>
                         </button>
                     </div>
                     <group>
@@ -268,6 +277,9 @@
                     <div class="oe_button_box" name="button_box">
                         <button class="oe_stat_button" type="object" name="action_view_branches" icon="fa-code-fork">
                             <field name="branch_count" widget="statinfo" string="Branches"/>
+                        </button>
+                        <button class="oe_stat_button" type="object" name="action_view_prs" icon="fa-code-fork">
+                            <field name="pr_count" widget="statinfo" string="Pull Requests"/>
                         </button>
                     </div>
                     <group>

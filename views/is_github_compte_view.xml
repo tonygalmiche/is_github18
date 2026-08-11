@@ -11,18 +11,23 @@
                     <button name="action_actualiser"         string="Actualiser"           type="object" class="oe_highlight"/>
                     <button name="action_fetch_repositories" string="Récupérer les dépôts" type="object"/>
                     <button name="action_view_repositories"  string="Voir les dépôts"      type="object"/>
+                    <button name="action_view_contributors"  string="Voir les contributeurs" type="object"/>
                 </header>
                 <sheet>
                     <div class="oe_button_box" name="button_box">
                         <button class="oe_stat_button" type="object" name="action_view_repositories" icon="fa-code-fork">
-                            <field name="repository_count" widget="statinfo" string="Dépôts"/>
+                            <field name="nb_repos" widget="statinfo" string="Dépôts"/>
+                        </button>
+                        <button class="oe_stat_button" type="object" name="action_view_contributors" icon="fa-users">
+                            <field name="nb_contributors" widget="statinfo" string="Contributeurs"/>
+                        </button>
+                        <button class="oe_stat_button" type="object" name="action_view_prs" icon="fa-code-fork">
+                            <field name="pr_count" widget="statinfo" string="Pull Requests"/>
                         </button>
                     </div>
                     <group>
                         <field name="name"/>
                         <field name="url" widget="url"/>
-                        <field name="nb_repos"/>
-                        <field name="nb_contributors"/>
                     </group>
                     <group string="Commentaire">
                         <field name="commentaire" nolabel="1"/>
@@ -42,7 +47,6 @@
                 <field name="url"              optional="show" widget="url"/>
                 <field name="nb_repos"         optional="show"/>
                 <field name="nb_contributors"  optional="show"/>
-                <field name="repository_count" optional="show"/>
                 <field name="commentaire"      optional="hide"/>
             </list>
         </field>

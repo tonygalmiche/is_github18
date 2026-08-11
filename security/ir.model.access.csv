@@ -5,3 +5,5 @@ access_is_github_branch_user,is.github.branch user,model_is_github_branch,base.g
 access_is_github_contributor_user,is.github.contributor user,model_is_github_contributor,base.group_user,1,1,1,1
 access_is_github_module_user,is.github.module user,model_is_github_module,base.group_user,1,1,1,1
 access_is_github_module_stat_user,is.github.module.stat user,model_is_github_module_stat,base.group_user,1,0,0,0
+access_is_github_pr_user,is.github.pr user,model_is_github_pr,base.group_user,1,1,1,1
+access_is_github_pr_import_user,is.github.pr.import user,model_is_github_pr_import,base.group_user,1,1,1,1

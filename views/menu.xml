@@ -35,6 +35,18 @@
               action="is_github_module_action"
               sequence="50"/>
 
+    <menuitem id="is_github_menu_pr"
+              name="Pull Requests"
+              parent="is_github_menu_root"
+              action="is_github_pr_action"
+              sequence="55"/>
+
+    <menuitem id="is_github_menu_pr_fetch"
+              name="Rechercher / mettre à jour les PR"
+              parent="is_github_menu_root"
+              action="is_github_pr_import_action"
+              sequence="56"/>
+
     <menuitem id="is_github_menu_module_stat"
               name="Stat. modules"
               parent="is_github_menu_root"
