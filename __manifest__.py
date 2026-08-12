@@ -12,6 +12,7 @@ Module InfoSaône Github pour Odoo 18
     'website'    : 'http://www.infosaone.com',
     'depends'    : [
         'base',
+        'mail',
     ],
     'data' : [
         'security/ir.model.access.csv',

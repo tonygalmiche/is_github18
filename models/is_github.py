@@ -175,7 +175,7 @@ class IsGithubCompte(models.Model):
             'res_model': 'is.github.pr',
             'view_mode': 'list,form',
             'domain'   : [('compte_id', '=', self.id)],
-            'context'  : {'default_compte_id': self.id},
+            'context'  : {'default_compte_id': self.id, 'search_default_not_abandonne': 1},
         }
 
 
@@ -234,7 +234,7 @@ class IsGithubBranch(models.Model):
             'res_model': 'is.github.pr',
             'view_mode': 'list,form',
             'domain'   : [('branch_id', '=', self.id)],
-            'context'  : {'default_branch_id': self.id},
+            'context'  : {'default_branch_id': self.id, 'search_default_not_abandonne': 1},
         }
 
     @api.model_create_multi
@@ -299,6 +299,7 @@ class IsGithubModule(models.Model):
             'res_model': 'is.github.pr',
             'view_mode': 'list,form',
             'domain'   : [('id', 'in', self.pr_ids.ids)],
+            'context'  : {'search_default_not_abandonne': 1},
         }
 
 
@@ -346,7 +347,7 @@ class IsGithubContributor(models.Model):
             'res_model': 'is.github.pr',
             'view_mode': 'list,form',
             'domain'   : [('contributor_id', '=', self.id)],
-            'context'  : {'default_contributor_id': self.id},
+            'context'  : {'default_contributor_id': self.id, 'search_default_not_abandonne': 1},
         }
 
 
@@ -425,7 +426,7 @@ class IsGithubRepository(models.Model):
             'res_model': 'is.github.pr',
             'view_mode': 'list,form',
             'domain'   : [('repository_id', '=', self.id)],
-            'context'  : {'default_repository_id': self.id},
+            'context'  : {'default_repository_id': self.id, 'search_default_not_abandonne': 1},
         }
     def _fetch_all_pages(self, url, headers, params=None):
         items      = []

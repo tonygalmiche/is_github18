@@ -9,7 +9,7 @@
             <form>
                 <header>
                     <button name="action_actualiser" string="Actualiser" type="object" class="oe_highlight"/>
-                    <field name="state" widget="statusbar" statusbar_visible="open,merged,closed" readonly="1"/>
+                    <field name="action" widget="statusbar" statusbar_visible="analyse,a_faire,fait,abandonne" options="{'clickable': '1'}"/>
                 </header>
                 <sheet>
                     <group>
@@ -17,6 +17,7 @@
                             <field name="name" readonly="1"/>
                             <field name="number" readonly="1"/>
                             <field name="url" widget="url" readonly="1"/>
+                            <field name="state" readonly="1"/>
                             <field name="compte_id" readonly="1"/>
                             <field name="repository_id" readonly="1"/>
                             <field name="branch_id" readonly="1"/>
@@ -32,11 +33,11 @@
                             <field name="last_sync_date" readonly="1"/>
                         </group>
                     </group>
-                    <group string="Action">
+                    <group string="Commentaire">
                         <field name="commentaire"/>
-                        <field name="action"/>
                     </group>
                 </sheet>
+                <chatter/>
             </form>
         </field>
     </record>
@@ -61,7 +62,10 @@
                 <field name="branch_id"          optional="show"/>
                 <field name="module_ids"         optional="hide" widget="many2many_tags"/>
                 <field name="contributor_id"     optional="show"/>
-                <field name="state"              optional="show"/>
+                <field name="state"              optional="show" widget="badge"
+                       decoration-info="state == 'open'"
+                       decoration-success="state == 'merged'"
+                       decoration-danger="state == 'closed'"/>
                 <field name="action"              optional="show" widget="badge"
                        decoration-warning="action == 'analyse'"
                        decoration-danger="action == 'a_faire'"
@@ -70,6 +74,7 @@
                 <field name="needs_review"       optional="show"/>
                 <field name="draft"              optional="hide"/>
                 <field name="labels"             optional="hide"/>
+                <field name="github_created_at"  optional="show"/>
                 <field name="github_updated_at"  optional="show"/>
                 <field name="last_sync_date"     optional="hide"/>
                 <field name="url"                optional="hide" widget="url"/>
@@ -91,13 +96,14 @@
                 <field name="branch_id"/>
                 <field name="module_ids"/>
                 <field name="contributor_id"/>
-                <filter name="needs_review" string="Needs review" domain="[('needs_review', '=', True)]"/>
-                <filter name="is_mig"       string="[MIG]"        domain="[('name', 'ilike', '[MIG]')]"/>
-                <filter name="is_not_mig"   string="&lt;&gt;[MIG]"    domain="[('name', 'not ilike', '[MIG]')]"/>
-                <filter name="state_open"   string="Ouvertes"      domain="[('state', '=', 'open')]"/>
-                <filter name="state_merged" string="Fusionnées"    domain="[('state', '=', 'merged')]"/>
-                <filter name="state_closed" string="Fermées"       domain="[('state', '=', 'closed')]"/>
+                <filter name="needs_review" string="Needs review" domain="[('needs_review', '=', True), ('action', '!=', 'abandonne')]"/>
+                <filter name="is_mig"       string="[MIG]"        domain="[('name', 'ilike', '[MIG]'), ('action', '!=', 'abandonne')]"/>
+                <filter name="is_not_mig"   string="&lt;&gt;[MIG]"    domain="[('name', 'not ilike', '[MIG]'), ('action', '!=', 'abandonne')]"/>
+                <filter name="state_open"   string="Ouvertes"      domain="[('state', '=', 'open'), ('action', '!=', 'abandonne')]"/>
+                <filter name="state_merged" string="Fusionnées"    domain="[('state', '=', 'merged'), ('action', '!=', 'abandonne')]"/>
+                <filter name="state_closed" string="Fermées"       domain="[('state', '=', 'closed'), ('action', '!=', 'abandonne')]"/>
                 <filter name="not_abandonne" string="Non abandonnées" domain="[('action', '!=', 'abandonne')]"/>
+                <filter name="action_a_faire" string="A Faire" domain="[('action', '=', 'a_faire')]"/>
                 <group expand="0" string="Regrouper par...">
                     <filter name="group_by_compte"      string="Compte"        context="{'group_by': 'compte_id'}"/>
                     <filter name="group_by_repository"  string="Dépôt"         context="{'group_by': 'repository_id'}"/>
@@ -145,6 +151,7 @@
                             <field name="branch_id"/>
                             <field name="module_ids" widget="many2many_tags"/>
                             <field name="contributor_id"/>
+                            <field name="title_filter"/>
                         </group>
                         <group>
                             <field name="needs_review"/>

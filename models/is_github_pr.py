@@ -19,40 +19,41 @@ class IsGithubPr(models.Model):
     _name        = 'is.github.pr'
     _description = "Pull Request Github"
     _order       = 'compte_id, repository_id, number desc'
+    _inherit     = ['mail.thread', 'mail.activity.mixin']
     _sql_constraints = [
         ('repository_number_uniq', 'unique(repository_id, number)', "Cette Pull Request existe déjà pour ce dépôt."),
     ]
 
-    number             = fields.Integer("Numéro"        , required=True)
-    name               = fields.Char("Titre"            , required=True)
-    url                = fields.Char("URL")
-    repository_id      = fields.Many2one('is.github.repository', "Dépôt"  , required=True, ondelete='cascade', index=True)
-    compte_id          = fields.Many2one('is.github.compte'     , "Compte" , related='repository_id.compte_id', store=True, index=True)
-    branch_id          = fields.Many2one('is.github.branch'     , "Branche cible", index=True)
+    number             = fields.Integer("Numéro"        , required=True, tracking=True)
+    name               = fields.Char("Titre"            , required=True, tracking=True)
+    url                = fields.Char("URL"               , tracking=True)
+    repository_id      = fields.Many2one('is.github.repository', "Dépôt"  , required=True, ondelete='cascade', index=True, tracking=True)
+    compte_id          = fields.Many2one('is.github.compte'     , "Compte" , related='repository_id.compte_id', store=True, index=True, tracking=True)
+    branch_id          = fields.Many2one('is.github.branch'     , "Branche cible", index=True, tracking=True)
     module_ids         = fields.Many2many(
         'is.github.module',
         'is_github_pr_module_rel', 'pr_id', 'module_id',
-        string="Modules"
+        string="Modules", tracking=True
     )
-    contributor_id     = fields.Many2one('is.github.contributor', "Auteur" , index=True)
+    contributor_id     = fields.Many2one('is.github.contributor', "Auteur" , index=True, tracking=True)
     state              = fields.Selection([
         ('open'  , "Ouverte"),
         ('closed', "Fermée"),
         ('merged', "Fusionnée"),
-    ], "État", default='open', required=True)
-    draft              = fields.Boolean("Brouillon")
-    needs_review       = fields.Boolean("Needs review", index=True)
+    ], "État", default='open', required=True, tracking=True)
+    draft              = fields.Boolean("Brouillon", tracking=True)
+    needs_review       = fields.Boolean("Needs review", index=True, tracking=True)
     action             = fields.Selection([
         ('analyse'   , "Analysé"),
         ('a_faire'   , "A faire"),
         ('fait'      , "Fait"),
         ('abandonne' , "Abandonné"),
-    ], "Action", index=True)
-    labels             = fields.Char("Étiquettes")
-    github_created_at  = fields.Datetime("Créée le")
-    github_updated_at  = fields.Datetime("Mise à jour le")
-    last_sync_date     = fields.Datetime("Dernière actualisation", readonly=True)
-    commentaire        = fields.Text("Commentaire")
+    ], "Action", index=True, tracking=True)
+    labels             = fields.Char("Étiquettes"        , tracking=True)
+    github_created_at  = fields.Datetime("Créée le"      , tracking=True)
+    github_updated_at  = fields.Datetime("Mise à jour le", tracking=True)
+    last_sync_date     = fields.Datetime("Dernière actualisation", readonly=True, tracking=True)
+    commentaire        = fields.Text("Commentaire"       , tracking=True)
 
     def action_set_abandonne(self):
         self.write({'action': 'abandonne'})
@@ -143,6 +144,7 @@ class IsGithubPrImport(models.Model):
     module_ids     = fields.Many2many('is.github.module'    , string="Modules")
     branch_id      = fields.Many2one('is.github.branch'     , string="Branche", required=True)
     contributor_id = fields.Many2one('is.github.contributor', string="Contributeur")
+    title_filter   = fields.Char("Filtre sur le titre")
     needs_review   = fields.Boolean("Needs review uniquement", default=True)
     state          = fields.Selection([
         ('open'  , "Ouverte"),
@@ -231,6 +233,10 @@ class IsGithubPrImport(models.Model):
 
                 title       = item.get('title', '')
                 title_lower = title.lower()
+
+                if self.title_filter and self.title_filter.lower() not in title_lower:
+                    continue
+
                 matched_module_ids = [
                     m.id for m in repo.module_ids
                     if m.name and m.name.lower() in title_lower
@@ -272,13 +278,19 @@ class IsGithubPrImport(models.Model):
             'last_updated' : total_updated,
         })
 
-        domain = [('branch_id', '=', self.branch_id.id), ('compte_id', 'in', comptes.ids)]
+        domain = [
+            ('branch_id', '=', self.branch_id.id),
+            ('compte_id', 'in', comptes.ids),
+            ('action', '!=', 'abandonne'),
+        ]
         if self.needs_review:
             domain.append(('needs_review', '=', True))
         if self.contributor_id:
             domain.append(('contributor_id', '=', self.contributor_id.id))
         if wanted_module_ids:
             domain.append(('module_ids', 'in', list(wanted_module_ids)))
+        if self.title_filter:
+            domain.append(('name', 'ilike', self.title_filter))
 
         return {
             'type'     : 'ir.actions.act_window',
@@ -286,4 +298,5 @@ class IsGithubPrImport(models.Model):
             'res_model': 'is.github.pr',
             'view_mode': 'list,form',
             'domain'   : domain,
+            'context'  : {'search_default_not_abandonne': 1},
         }

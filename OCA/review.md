@@ -32,3 +32,49 @@ Après les tests, soumettre son avis via le bouton **"Review changes"** sur GitH
 ## Aller plus loin
 
 Les contributeurs motivés peuvent rejoindre la liste de diffusion **"Contributors"** de l'OCA pour s'impliquer davantage, selon leurs compétences et leur disponibilité.
+
+## Faire une review en local avec le script `clone-pr.sh`
+
+Plutôt que d'utiliser Runboat, il est possible de tester une PR sur sa propre base Odoo (ex : base `oca18` dédiée aux tests). Le script [`scripts-externes/clone-pr.sh`](../scripts-externes/clone-pr.sh) de ce module automatise la récupération du code.
+
+### Fonctionnement du script
+
+À partir de l'URL d'une pull request, le script :
+1. Interroge l'API Github pour trouver le fork et la branche de la PR.
+2. Détecte automatiquement le(s) dossier(s) de module modifié(s) par la PR.
+3. Télécharge **uniquement** ce(s) dossier(s) (sparse-checkout Git, profondeur 1) — pas besoin de cloner tout le dépôt.
+4. Place le(s) module(s) dans le répertoire courant, prêt à être ajouté à l'`addons_path`, et nettoie tous les fichiers temporaires (dont `.git`).
+
+### Procédure rapide
+
+1. Se placer dans le dossier contenant les modules de la base de test :
+   ```bash
+   cd ~/Documents/Développement/dev_odoo/18.0/oca18
+   ```
+
+2. Lancer le script avec l'URL de la PR :
+   ```bash
+   ./is_github18/scripts-externes/clone-pr.sh https://github.com/OCA/<depot>/pull/<numero>
+   ```
+   (Astuce : définir `GITHUB_TOKEN` en variable d'environnement pour éviter la limite de l'API Github non authentifiée.)
+
+3. Installer ou mettre à jour le module sur la base de test :
+ 
+4. Tester le scénario décrit dans la PR sur l'interface Odoo (base `oca18`).
+
+
+### Poster sa review sur GitHub
+
+1. Sur la page de la PR, aller sur l'onglet **"Files changed"** pour parcourir le code modifié (c'est ce qui fait apparaître le bouton "Submit review" en haut à droite).
+2. Cliquer sur ce bouton **"Submit review"**
+3. Rédiger un commentaire court et factuel, en anglais, décrivant ce qui a été testé. Exemple :
+   ```
+   Functional review
+
+   Tested on Odoo 18.0: <résumé très court du scénario testé et du résultat>. Works as expected.
+   ```
+4. Choisir :
+   - **Approve** si tout fonctionne correctement ;
+   - **Request changes** si un problème bloquant a été rencontré (le décrire précisément) ;
+   - **Comment** pour un simple avis sans validation.
+5. Cliquer sur **"Submit review"**.
