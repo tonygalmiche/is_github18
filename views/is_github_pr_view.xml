@@ -79,6 +79,7 @@
                 <field name="last_sync_date"     optional="hide"/>
                 <field name="url"                optional="hide" widget="url"/>
                 <field name="commentaire"        optional="hide"/>
+                <field name="write_date"         optional="hide"/>
             </list>
         </field>
     </record>
@@ -90,6 +91,8 @@
         <field name="arch" type="xml">
             <search>
                 <field name="name"/>
+                <field name="action"/>
+                <field name="state"/>
                 <field name="number"/>
                 <field name="compte_id"/>
                 <field name="repository_id"/>
@@ -104,6 +107,7 @@
                 <filter name="state_closed" string="Fermées"       domain="[('state', '=', 'closed'), ('action', '!=', 'abandonne')]"/>
                 <filter name="not_abandonne" string="Non abandonnées" domain="[('action', '!=', 'abandonne')]"/>
                 <filter name="action_a_faire" string="A Faire" domain="[('action', '=', 'a_faire')]"/>
+                <filter name="action_fait"    string="Fait" domain="[('action', '=', 'fait')]"/>
                 <group expand="0" string="Regrouper par...">
                     <filter name="group_by_compte"      string="Compte"        context="{'group_by': 'compte_id'}"/>
                     <filter name="group_by_repository"  string="Dépôt"         context="{'group_by': 'repository_id'}"/>

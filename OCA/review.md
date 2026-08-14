@@ -78,3 +78,43 @@ Plutôt que d'utiliser Runboat, il est possible de tester une PR sur sa propre b
    - **Request changes** si un problème bloquant a été rencontré (le décrire précisément) ;
    - **Comment** pour un simple avis sans validation.
 5. Cliquer sur **"Submit review"**.
+
+## Se faire aider par Claude pour une review
+
+Workflow habituel avec l'assistant pour dérouler une review de bout en bout, sans avoir à tout réexpliquer à chaque fois.
+
+### 1. Récupérer les infos d'une PR
+
+Donner l'URL de la PR (`https://github.com/OCA/<depot>/pull/<numero>`). `gh` n'est pas authentifié sur ce poste (`gh auth login` en échec), donc l'assistant utilise l'API publique Github en `curl` :
+```bash
+curl -s https://api.github.com/repos/OCA/<depot>/pulls/<numero>
+curl -s https://api.github.com/repos/OCA/<depot>/issues/<numero>/comments        # commentaires généraux
+curl -s https://api.github.com/repos/OCA/<depot>/pulls/<numero>/comments        # commentaires en ligne (review comments)
+```
+Il en tire : titre, état, branche cible, description, labels, stats (commits/fichiers), et le contenu des commentaires. Il précise si la PR dépend d'une autre PR, et son état (mergée ou non).
+
+### 2. Comprendre le module et préparer un plan de test
+
+L'assistant récupère les fichiers utiles (modèles, vues, README) depuis le fork/branche de la PR via `raw.githubusercontent.com/<fork>/<branche>/<chemin>`, sans cloner. Il en déduit un plan de test concret adapté au module (étapes UI précises, cas limites, contre-tests), et peut vérifier si le module est une **migration** (déjà présent sur une branche antérieure) ou un **nouveau module**.
+
+### 3. Récupérer le code sur la base de test
+
+Utiliser `clone-module.sh` (ou `clone-pr.sh`, voir plus haut) pour télécharger uniquement le(s) dossier(s) du module — l'assistant donne l'URL exacte du module (`.../tree/<branche>/<module>`) à passer au script, y compris pour les dépendances manquantes signalées par Odoo au démarrage.
+
+### 4. Tests unitaires : pas nécessaire de les rejouer en local
+
+La CI Github les fait déjà tourner à chaque push. Se concentrer sur le **test fonctionnel manuel en UI**.
+
+### 5. Vérification en base (SSH + psql)
+
+Pour valider un comportement backend difficile à observer en UI (ex. quel utilisateur a été assigné à un enregistrement créé automatiquement), l'assistant peut exécuter des requêtes SQL en lecture seule via SSH sur l'environnement de test, à condition d'avoir un accès.
+
+### 6. Rédiger le commentaire de review
+
+Sur demande, l'assistant rédige le texte à poster (voir section précédente) :
+- Toujours en **anglais**, factuel, sans fioritures.
+- Commence par `Tested on a local Odoo <version> instance: ...`.
+- Format court par défaut ; sur demande, reformulé plus court ou en **liste à tirets** (un point testé par ligne).
+- Se base uniquement sur les tests réellement confirmés par l'utilisateur dans la conversation (l'assistant demande confirmation si un résultat n'a pas été explicitement validé).
+- **Toujours fourni dans un bloc de code** (```) pour un copier/coller direct dans le champ de review Github.
+
