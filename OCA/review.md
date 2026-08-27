@@ -112,9 +112,9 @@ Pour valider un comportement backend difficile à observer en UI (ex. quel utili
 ### 6. Rédiger le commentaire de review
 
 Sur demande, l'assistant rédige le texte à poster (voir section précédente) :
-- Toujours en **anglais**, factuel, sans fioritures.
+- Toujours en **anglais**, factuel, sans fioritures, le plus court possible (une ligne par point testé, pas de phrases).
 - Commence par `Tested on a local Odoo <version> instance: ...`.
-- Format court par défaut ; sur demande, reformulé plus court ou en **liste à tirets** (un point testé par ligne).
+- Toujours en **liste à tirets**, un point testé par ligne.
 - Se base uniquement sur les tests réellement confirmés par l'utilisateur dans la conversation (l'assistant demande confirmation si un résultat n'a pas été explicitement validé).
 - **Toujours fourni dans un bloc de code** (```) pour un copier/coller direct dans le champ de review Github.
 
