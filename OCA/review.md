@@ -35,7 +35,11 @@ Les contributeurs motivés peuvent rejoindre la liste de diffusion **"Contributo
 
 ## Faire une review en local avec le script `clone-pr.sh`
 
-Plutôt que d'utiliser Runboat, il est possible de tester une PR sur sa propre base Odoo (ex : base `oca18` dédiée aux tests). Le script [`scripts-externes/clone-pr.sh`](../scripts-externes/clone-pr.sh) de ce module automatise la récupération du code.
+Plutôt que d'utiliser Runboat, il est possible de tester une PR sur sa propre base Odoo. Deux bases de test sont disponibles selon la version ciblée par la PR (visible dans son titre, ex : `[18.0]` ou `[19.0]`, ou dans la branche cible) :
+- `~/Documents/Développement/dev_odoo/18.0/oca18` pour les PR ciblant la 18.0 ;
+- `~/Documents/Développement/dev_odoo/19.0/oca19` pour les PR ciblant la 19.0.
+
+Le script [`scripts-externes/clone-pr.sh`](../scripts-externes/clone-pr.sh) de ce module automatise la récupération du code.
 
 ### Fonctionnement du script
 
@@ -47,9 +51,11 @@ Plutôt que d'utiliser Runboat, il est possible de tester une PR sur sa propre b
 
 ### Procédure rapide
 
-1. Se placer dans le dossier contenant les modules de la base de test :
+1. Se placer dans le dossier contenant les modules de la base de test correspondant à la version ciblée par la PR :
    ```bash
-   cd ~/Documents/Développement/dev_odoo/18.0/oca18
+   cd ~/Documents/Développement/dev_odoo/18.0/oca18   # PR ciblant la 18.0
+   # ou
+   cd ~/Documents/Développement/dev_odoo/19.0/oca19   # PR ciblant la 19.0
    ```
 
 2. Lancer le script avec l'URL de la PR :
