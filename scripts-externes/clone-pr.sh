@@ -1,10 +1,24 @@
 #!/usr/bin/env bash
 #
-# clone-pr.sh - Récupère uniquement le(s) dossier(s) modifié(s) par une Pull Request
-#               Github (OCA ou autre) dans le dossier courant, sans cloner tout le dépôt.
+# clone-pr.sh - Clone une Pull Request Github (OCA ou autre) dans le dossier ../OCA
+#               et crée dans le dossier courant un lien vers chaque module modifié
+#               par la PR.
+#
+# À lancer depuis le dossier des modules à tester (ex. dev_odoo/20.0/oca20) ;
+# le dossier OCA doit être au même niveau (ex. dev_odoo/20.0/OCA).
+#
+# Installation (une fois) : lien dans ~/.local/bin, qui est dans le PATH
+#   ln -s /home/tony/Documents/Développement/dev_odoo/18.0/infosaone/is_github18/scripts-externes/clone-pr.sh ~/.local/bin/clone-pr
 #
 # Usage :
-#   ./clone-pr.sh https://github.com/OCA/sale-workflow/pull/3925
+#   clone-pr https://github.com/OCA/reporting-engine/pull/1203
+#
+# Résultat :
+#   ../OCA/reporting-engine-pr1203/   clone complet du dépôt, branche pr-1203 = branche de la PR
+#   ./report_xlsx -> ../OCA/reporting-engine-pr1203/report_xlsx
+#
+# Relancer le script met le clone à jour avec les derniers commits de la PR
+# (refusé si le clone contient des modifications locales).
 #
 # Variables d'environnement optionnelles :
 #   GITHUB_TOKEN   Token Github (évite les limites de l'API non authentifiée)
@@ -27,6 +41,16 @@ OWNER="${BASH_REMATCH[1]}"
 REPO="${BASH_REMATCH[2]}"
 PR_NUMBER="${BASH_REMATCH[3]}"
 
+OCA_DIR="../OCA"
+if [ ! -d "$OCA_DIR" ]; then
+    echo "Dossier ${OCA_DIR} introuvable : il doit être au même niveau que le dossier courant."
+    exit 1
+fi
+
+CLONE_NAME="${REPO}-pr${PR_NUMBER}"
+CLONE_DIR="${OCA_DIR}/${CLONE_NAME}"
+BRANCH="pr-${PR_NUMBER}"
+
 CURL_AUTH=()
 if [ -n "${GITHUB_TOKEN:-}" ]; then
     CURL_AUTH=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
@@ -34,72 +58,70 @@ fi
 
 echo "==> Récupération des infos de la PR ${OWNER}/${REPO}#${PR_NUMBER}..."
 
-HEAD_INFO=$(curl -s "${CURL_AUTH[@]}" "https://api.github.com/repos/${OWNER}/${REPO}/pulls/${PR_NUMBER}" \
+PR_INFO=$(curl -s "${CURL_AUTH[@]}" "https://api.github.com/repos/${OWNER}/${REPO}/pulls/${PR_NUMBER}" \
     | python3 -c "
 import json, sys
 d = json.load(sys.stdin)
-head = d.get('head', {})
-repo = head.get('repo', {}) or {}
-print(repo.get('full_name', ''))
-print(head.get('ref', ''))
+print(d.get('base', {}).get('ref', ''))
+print(d.get('title', ''))
+print(d.get('state', ''))
 ")
 
-HEAD_REPO=$(echo "$HEAD_INFO" | sed -n '1p')
-HEAD_REF=$(echo "$HEAD_INFO" | sed -n '2p')
+BASE_REF=$(echo "$PR_INFO" | sed -n '1p')
+PR_TITLE=$(echo "$PR_INFO" | sed -n '2p')
+PR_STATE=$(echo "$PR_INFO" | sed -n '3p')
 
-if [ -z "$HEAD_REPO" ] || [ -z "$HEAD_REF" ]; then
-    echo "Impossible de récupérer les infos de la PR (dépôt supprimé, PR introuvable, etc.)."
+if [ -z "$BASE_REF" ]; then
+    echo "Impossible de récupérer les infos de la PR (PR introuvable, limite de l'API, etc.)."
     exit 1
 fi
 
-echo "    Fork   : ${HEAD_REPO}"
-echo "    Branche: ${HEAD_REF}"
+echo "    Titre  : ${PR_TITLE}"
+echo "    État   : ${PR_STATE}"
+echo "    Cible  : ${BASE_REF}"
 
-echo "==> Récupération des dossiers modifiés..."
+if [ -d "$CLONE_DIR" ]; then
+    echo "==> Mise à jour du clone ${CLONE_DIR}..."
+    if [ -n "$(git -C "$CLONE_DIR" status --porcelain)" ]; then
+        echo "Le clone contient des modifications locales : mise à jour annulée."
+        git -C "$CLONE_DIR" status --short
+        exit 1
+    fi
+else
+    echo "==> Clone de ${OWNER}/${REPO} (branche ${BASE_REF}) dans ${CLONE_DIR}..."
+    git clone -q --filter=blob:none --single-branch --branch "$BASE_REF" \
+        "https://github.com/${OWNER}/${REPO}.git" "$CLONE_DIR"
+fi
 
-FOLDERS=$(curl -s "${CURL_AUTH[@]}" "https://api.github.com/repos/${OWNER}/${REPO}/pulls/${PR_NUMBER}/files?per_page=100" \
-    | python3 -c "
-import json, sys
-files = json.load(sys.stdin)
-folders = sorted({f['filename'].split('/')[0] for f in files if '/' in f['filename']})
-print('\n'.join(folders))
-")
+# La branche de la PR est lue sur le dépôt d'origine (refs/pull/N/head) :
+# fonctionne même si le fork de l'auteur a été supprimé.
+git -C "$CLONE_DIR" fetch -q origin \
+    "+refs/heads/${BASE_REF}:refs/remotes/origin/${BASE_REF}" \
+    "+pull/${PR_NUMBER}/head:refs/remotes/origin/${BRANCH}"
+git -C "$CLONE_DIR" checkout -q -B "$BRANCH" "origin/${BRANCH}"
+echo "    Branche ${BRANCH} : $(git -C "$CLONE_DIR" log -1 --format='%h %cd %s' --date=short)"
 
-if [ -z "$FOLDERS" ]; then
-    echo "Aucun dossier de module détecté dans les fichiers modifiés."
+echo "==> Modules modifiés par la PR..."
+MODULES=$(git -C "$CLONE_DIR" diff --name-only "origin/${BASE_REF}...${BRANCH}" \
+    | cut -d/ -f1 | sort -u \
+    | while IFS= read -r folder; do
+        [ -f "${CLONE_DIR}/${folder}/__manifest__.py" ] && echo "$folder"
+    done || true)
+
+if [ -z "$MODULES" ]; then
+    echo "Aucun module (dossier avec __manifest__.py) modifié par la PR."
     exit 1
 fi
 
-echo "    Dossier(s) : $(echo "$FOLDERS" | tr '\n' ' ')"
+echo "==> Liens dans $(pwd) :"
+while IFS= read -r module; do
+    target="${CLONE_DIR}/${module}"
+    if [ -e "$module" ] && [ ! -L "$module" ]; then
+        echo "    ${module} : existe déjà et n'est pas un lien, laissé tel quel"
+        continue
+    fi
+    ln -sfn "$target" "$module"
+    echo "    ${module} -> ${target}"
+done <<< "$MODULES"
 
-TMP_DIR=".clone-pr-tmp-${PR_NUMBER}"
-rm -rf "$TMP_DIR"
-mkdir "$TMP_DIR"
-cd "$TMP_DIR"
-
-git init -q
-git remote add origin "https://github.com/${HEAD_REPO}.git"
-git sparse-checkout init --no-cone
-
-SPARSE_PATTERNS=()
-while IFS= read -r folder; do
-    SPARSE_PATTERNS+=("${folder}/*")
-done <<< "$FOLDERS"
-git sparse-checkout set "${SPARSE_PATTERNS[@]}"
-
-echo "==> Téléchargement de la branche ${HEAD_REF}..."
-git fetch -q --depth 1 origin "$HEAD_REF"
-git checkout -q FETCH_HEAD
-
-cd ..
-
-echo "==> Déplacement des dossiers dans le répertoire courant..."
-while IFS= read -r folder; do
-    rm -rf "./${folder}"
-    mv "${TMP_DIR}/${folder}" "./${folder}"
-done <<< "$FOLDERS"
-
-rm -rf "$TMP_DIR"
-
-echo "==> Terminé. Dossier(s) récupéré(s) :"
-echo "$FOLDERS"
+echo "==> Terminé."
